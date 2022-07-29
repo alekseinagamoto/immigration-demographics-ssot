@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  jupyter_notebook:
+    build:
+      context: .
+      dockerfile: ./services/jupyter/Dockerfile
+    container_name: jupyter
+    ports: 
+      - 8888:8888
+    volumes:
+      - ./src:/home/jovyan/work/src
+      - ./dwh.cfg:/home/jovyan/work/dwh.cfg
