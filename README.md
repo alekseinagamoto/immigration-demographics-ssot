@@ -27,7 +27,7 @@ In order to create a single-source-of-truth data warehouse, the following steps 
     * Create country dimension table from `i94cit_i94res` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
-* Perform data quality checks (table schema check, data completeness check)
+* Execute data quality checks (table schema check, data completeness check)
 * Write created fact and dimension tables to S3
     
 #### Datasets:
@@ -78,7 +78,7 @@ The data pipeline is as follows:
 6.  Create U.S. City Demographic dimension table - `dim_city_demographics` - from U.S. City Demographic data
 7.  Preprocess World Temperature data
 8.  Create World Temperature dimension table - `dim_city_temperature` - from preprocessed World Temperature data 
-9.  Perform data quality checks (table schema check, data completeness check)
+9.  Execute data quality checks (table schema check, data completeness check)
 11. Write created fact and dimension tables to S3 
 
 #### Pipeline Execution
