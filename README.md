@@ -48,7 +48,7 @@ We've made use of the followng technologies in this project:
 
 The data model for our single-source-of-truth datawarehouse looks as follows:
 
-<img src="erd_data_warehouse.png" alt="Conceptual model" width="1500" height="1500" />
+<img src="erd_data_warehouse.png" alt="Conceptual model" width="600" height="400" />
 
 ## ETL Pipeline Design
 
