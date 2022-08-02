@@ -44,7 +44,7 @@ def process_immigration_data(spark, input_data, output_data):
     file_path = os.path.join(input_data + '/immigration_data/')
 
     # Read data 
-    df_raw = spark.read.parquet(file_path)
+    df_raw = spark.read.format('com.github.saurfang.sas.spark').load(file_path)
     
     # Preprocess data
     logging.info("Preprocessing immigration data..")
