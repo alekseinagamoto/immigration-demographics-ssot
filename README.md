@@ -27,7 +27,7 @@ In order to create a single-source-of-truth data warehouse, the following steps 
     * Create country dimension table from `i94cit_i94res` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
-* Perform data quality checks
+* Perform data quality checks (table schema check, data completeness check)
 * Write created fact and dimension tables to S3
     
 #### Datasets:
@@ -50,6 +50,9 @@ We've made use of the followng technologies in this project:
 The data model for our single-source-of-truth datawarehouse looks as follows:
 
 <img src="erd_data_model.png" alt="Conceptual model" width="600" height="400" />
+
+#### Data Model Validation
+You can observe validation of the datamodel in the ```Capstone Project ETL.ipynb``` notebook where sample queries have been provided to answers some questions that the data model can solve for.  
 
 ## ETL Pipeline 
 
@@ -75,8 +78,8 @@ The data pipeline is as follows:
 6.  Create U.S. City Demographic dimension table - `dim_city_demographics` - from U.S. City Demographic data
 7.  Preprocess World Temperature data
 8.  Create World Temperature dimension table - `dim_city_temperature` - from preprocessed World Temperature data 
-9.  Perform data quality checks
-10. Write created fact and dimension tables to S3 
+9.  Perform data quality checks (table schema check, data completeness check)
+11. Write created fact and dimension tables to S3 
 
 #### Pipeline Execution
 
