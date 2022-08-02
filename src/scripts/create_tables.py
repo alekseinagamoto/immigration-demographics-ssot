@@ -17,25 +17,25 @@ def create_immigration_fact_table(df, output_data):
     # UDF to convert SAS date format to datetime object
     get_datetime = udf(lambda x: (dt.datetime(1960, 1, 1).date() + dt.timedelta(x)).isoformat() if x else None)
     
-    df = df.withColumnRenamed('cicid', 'cic_id') \
-           .withColumnRenamed('i94yr', 'year') \
-           .withColumnRenamed('i94mon', 'month') \
-           .withColumnRenamed('i94port', 'city_code') \
-           .withColumnRenamed('i94addr', 'state_code') \
-           .withColumnRenamed('arrdate', 'arrival_date') \
-           .withColumnRenamed('depdate', 'departure_date') \
-           .withColumnRenamed('i94mode', 'mode') \
-           .withColumnRenamed('i94visa', 'visa') \
-           .withColumnRenamed('visatype', 'visa_type')
+    df = df.select('cicid', 'i94yr', 'i94mon', 'i94port', 'i94addr', 'arrdate', 'depdate', 'i94mode', 'i94visa', 'visatype').distinct() \
+        .withColumn('immigration_id', monotonically_increasing_id()) \
+        .withColumnRenamed('cicid','cic_id') \
+        .withColumnRenamed('i94yr', 'year') \
+        .withColumnRenamed('i94mon', 'month') \
+        .withColumnRenamed('i94port', 'city_code') \
+        .withColumnRenamed('i94addr', 'state_code') \
+        .withColumnRenamed('arrdate', 'arrival_date') \
+        .withColumnRenamed('depdate', 'departure_date') \
+        .withColumnRenamed('i94mode', 'mode') \
+        .withColumnRenamed('i94visa', 'visa') \
+        .withColumnRenamed('visatype', 'visa_type')
     
     # convert dates into datetime objects
     df = df.withColumn('arrival_date', get_datetime(df.arrival_date))
     df = df.withColumn('departure_date', get_datetime(df.departure_date))
-    
-    df = df.withColumn('immigration_id', monotonically_increasing_id())
-    
+        
     # write fact table to parquet file partioned by state
-    df.write.mode('overwrite').partitionBy('state_code').parquet(path=output_data + "fact_immigration.parquet")
+    df.write.mode('overwrite').partitionBy('state_code').parquet(path=output_data + "fact_immigration")
 
     return df
 
@@ -50,16 +50,15 @@ def create_immi_demographics_dim_table(df, output_data):
     Return:
         df {object}: spark dataframe with preprocessed immigrant demographics data
     """    
-    df = df.withColumnRenamed('cicid','cic_id') \
-           .withColumnRenamed('i94cit', 'country_of_birth') \
-           .withColumnRenamed('i94res', 'country_of_residence') \
-           .withColumnRenamed('biryear', 'year_of_birth') \
-           .withColumnRenamed('ins_num', 'insnum')
-    
-    df = df.withColumn('immi_demographics_id', monotonically_increasing_id())
+    df = df.select('cicid', 'i94cit', 'i94res', 'biryear', 'gender').distinct() \
+    .withColumn('immi_demographics_id', monotonically_increasing_id()) \
+    .withColumnRenamed('cicid','immigration_cic_id') \
+    .withColumnRenamed('i94cit', 'country_of_birth') \
+    .withColumnRenamed('i94res', 'country_of_residence') \
+    .withColumnRenamed('biryear', 'year_of_birth')
     
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_immigrant_demographics.parquet")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_immigrant_demographics")
 
     return df
 
@@ -75,21 +74,21 @@ def create_city_demographics_dimension_table(df, output_data):
         df {object}: spark dataframe with preprocessed city demographics data
     """
     df = df.withColumnRenamed('City', 'city_code') \
-           .withColumnRenamed('State Code', 'state_code') \
-           .withColumnRenamed('Median Age','median_age') \
-           .withColumnRenamed('Male Population', 'male_population') \
-           .withColumnRenamed('Female Population', 'female_population') \
-           .withColumnRenamed('Total Population', 'total_population') \
-           .withColumnRenamed('Number of Veterans', 'number_of_veterans') \
-           .withColumnRenamed('Foreign-born', 'foreign_born_num') \
-           .withColumnRenamed('Average Household Size', 'avg_household_size') \
-           .withColumnRenamed('Race', 'race') \
-           .withColumnRenamed('Count', 'count')
+        .withColumnRenamed('State', 'state_code') \
+        .withColumnRenamed('Median Age','median_age') \
+        .withColumnRenamed('Male Population', 'male_population') \
+        .withColumnRenamed('Female Population', 'female_population') \
+        .withColumnRenamed('Total Population', 'total_population') \
+        .withColumnRenamed('Number of Veterans', 'number_of_veterans') \
+        .withColumnRenamed('Foreign-born', 'foreign_born_num') \
+        .withColumnRenamed('Average Household Size', 'avg_household_size') \
+        .withColumnRenamed('Race', 'race') \
+        .withColumnRenamed('Count', 'count')
 
     df = df.withColumn('id', monotonically_increasing_id())
     
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_city_demographics.parquet")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_city_demographics")
 
     return df
 
@@ -104,18 +103,19 @@ def create_temperature_dimension_table(df, output_data):
     Return:
         df {object}: spark dataframe with preprocessed temperature data
     """
-    df = df.withColumn('dt', to_date(col('dt'))) \
+    df = df.select('dt', 'City', 'Country', 'AverageTemperature', 'AverageTemperatureUncertainty').distinct() \
+           .withColumn('dt', to_date(col('dt'))) \
            .withColumnRenamed('City', 'city_name') \
            .withColumnRenamed('Country', 'country_name') \
            .withColumnRenamed('AverageTemperature','avg_temperature') \
-           .withColumnRenamed('AverageTemperatureUncertainty', 'avg_temperature_delta')
+           .withColumnRenamed('AverageTemperatureUncertainty', 'avg_temperature_delta')    
     
     # Derive month and year from datetime column 
     df = df.withColumn('year', year(df['dt']))
     df = df.withColumn('month', month(df['dt']))
 
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_temperature.parquet")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_temperature")
     
     return df
 
@@ -194,5 +194,3 @@ def create_dim_state_table(spark, data, output_data):
     df.write.mode("overwrite").parquet(path=output_data + 'dim_state.parquet')
 
     return df
-
-
