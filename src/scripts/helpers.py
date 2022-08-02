@@ -1,3 +1,6 @@
+import logging 
+
+
 def preprocess_immigration_data(df):
     """Preprocess immigration dataframe
 
@@ -8,7 +11,6 @@ def preprocess_immigration_data(df):
         df {object}: spark dataframe with preprocessed immigration data
     """    
     logging.info(f'Total records in raw dataframe: {df.count()}')
-    print(f'Total records in raw dataframe: {df.count()}')
     
     # Remove columns with +85% missing values as identified during EDA
     drop_columns = ['entdepu', 'occup', 'insnum']    
@@ -21,7 +23,6 @@ def preprocess_immigration_data(df):
     df = df.dropna(how='all')
     
     logging.info(f'Total records in preprocessed dataframe: {df.count()}')
-    print(f'Total records in preprocessed dataframe: {df.count()}')
     
     return df
 
@@ -36,7 +37,6 @@ def preprocess_temperature_data(df):
         df {object}: spark dataframe with preprocessed world temperature data
     """
     logging.info(f'Total records in raw dataframe: {df.count()}')
-    print(f'Total records in raw dataframe: {df.count()}')
     
     # Remove records with missing average temperature
     df = df.dropna(subset=['AverageTemperature'])
@@ -48,7 +48,6 @@ def preprocess_temperature_data(df):
     df = df.dropna(how='all')
     
     logging.info(f'Total records in preprocessed dataframe: {df.count()}')
-    print(f'Total records in preprocessed dataframe: {df.count()}')
     
     return df
 
@@ -63,7 +62,6 @@ def preprocess_demographics_data(df):
     df {object}: spark dataframe with processed us demograpgics data
     """
     logging.info(f'Total records in raw dataframe: {df.count()}')
-    print(f'Total records in raw dataframe: {df.count()}')
     
     # Remove duplicate records on city, state and race
     df = df.dropDuplicates(subset=['City', 'State', 'Race'])
@@ -72,6 +70,18 @@ def preprocess_demographics_data(df):
     df.dropna(how="all")
     
     logging.info(f'Total records in preprocessed dataframe: {df.count()}')
-    print(f'Total records in preprocessed dataframe: {df.count()}')
     
     return df
+
+def run_quality_check(df, table_name):
+    """Check for non-empty fact and dimension tables.
+    Args:
+        df {object}: spark dataframe
+        table_name {str}: table name
+    """
+    total_count = df.count()
+
+    if total_count == 0:
+        logging.warning(f"Data quality check FAILED for {table_name}: no records found!")
+    else:
+        logging.info(f"Data quality check PASSED for {table_name}: {total_count} records found!")

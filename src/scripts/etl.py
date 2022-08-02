@@ -9,6 +9,9 @@ from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, dat
 import create_tables 
 import helpers
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 config = configparser.ConfigParser()
 config.read('dl.cfg')
 
@@ -38,10 +41,10 @@ def process_immigration_data(spark, input_data, output_data):
     """
     logging.info("Start processing immigration data..")
     # Get filepath to data file
-    file_path = os.path.join(input_data + 'immigration/18-83510-I94-Data-2016/*.sas7bdat')
+    file_path = os.path.join(input_data + '/immigration_data/')
 
     # Read data 
-    df_raw = spark.read.format('com.github.saurfang.sas.spark').load(file_path)
+    df_raw = spark.read.parquet(file_path)
     
     # Preprocess data
     logging.info("Preprocessing immigration data..")
@@ -49,11 +52,13 @@ def process_immigration_data(spark, input_data, output_data):
     
     # Create fact_immigration table
     logging.info("Creating fact_immigration table..")
-    create_tables.create_immigration_fact_table(df_preprocessed, output_data)
+    df = create_tables.create_immigration_fact_table(df_preprocessed, output_data)
+    helpers.run_quality_check(df, 'fact_immigration')
 
     # Create dim_immigrant_demographics table
     logging.info("Creating dim_immigrant_demographics table..")
-    create_tables.create_immi_demographics_dim_table(df_preprocessed, output_data)
+    df = create_tables.create_immi_demographics_dim_table(df_preprocessed, output_data)
+    helpers.run_quality_check(df, 'dim_immigrant_demographics')
 
     logging.info("Finished processing immigration data.")
 
@@ -68,7 +73,7 @@ def process_city_demographics_data(spark, input_data, output_data):
     """
     logging.info("Start processing U.S. city demographics data..")
     # Get filepath to data file
-    file_path = os.path.join(input_data + 'demography/us-cities-demographics.csv')
+    file_path = os.path.join(input_data + 'us-cities-demographics.csv')
 
     # Read data 
     df_raw = spark.read.format('csv').options(header=True, delimiter=';').load(file_path)
@@ -78,13 +83,14 @@ def process_city_demographics_data(spark, input_data, output_data):
     df_preprocessed = helpers.preprocess_demographics_data(df_raw)
 
     # Create table
-    create_tables.create_city_demographics_dimension_table(df_preprocessed, output_data)
+    df = create_tables.create_city_demographics_dimension_table(df_preprocessed, output_data)
+    helpers.run_quality_check(df, 'dim_city_demographics')
     
     logging.info("Finished processing U.S. city demographics data.")
     
 
 def process_temperature_data(spark, input_data, output_data):
-    """Process song data and create songs and artists table.
+    """Process global temparture data to create dim_temperature table.
     
     Args:
         spark {object}: SparkSession object
@@ -93,7 +99,7 @@ def process_temperature_data(spark, input_data, output_data):
     """
     logging.info("Start processing global temperature data..")
     # Get filepath to data file
-    file_path = os.path.join(input_data + 'temperature/GlobalLandTemperaturesByCity.csv')
+    file_path = os.path.join(input_data + 'GlobalLandTemperatureByCity.csv')
 
     # Read data 
     df_raw = spark.read.csv(file_path, header=True)
@@ -103,14 +109,21 @@ def process_temperature_data(spark, input_data, output_data):
     df_preprocessed = helpers.preprocess_temperature_data(df_raw)
 
     # Create table
-    create_tables.create_temperature_dimension_table(df_preprocessed, output_data)
+    df = create_tables.create_temperature_dimension_table(df_preprocessed, output_data)
+    helpers.run_quality_check(df, 'dim_temperature')
     
     logging.info("Finished processing global temperature data.")
 
 
-
-
-def process_i94_label_descriptions(spark, input_data, output_data)
+def process_i94_label_descriptions(spark, input_data, output_data):
+    """Process I94 Label Descriptions to create dim_country, dim_city and
+    dim_state dimension tables.
+    
+    Args:
+        spark {object}: SparkSession object
+        input_data {object}: Source S3 endpoint
+        output_data {object}: Destination S3 endpoint
+    """
     # Get filepath to data file
     file_path = os.path.join(input_data + "I94_SAS_Labels_Descriptions.SAS")
 
@@ -120,13 +133,19 @@ def process_i94_label_descriptions(spark, input_data, output_data)
         contents = f.readlines()
     
     # 1. Create dim_country table 
-    create_tables.create_dim_country_table(contents, output_data)
+    logging.info("Creating country dimension table..")
+    df = create_tables.create_dim_country_table(spark, contents, output_data)
+    helpers.run_quality_check(df, 'dim_country')
 
     # 2. Create dim_city table 
-    create_tables.create_dim_city_table(contents, output_data)
+    logging.info("Creating city dimension table..")
+    df = create_tables.create_dim_city_table(spark, contents, output_data)
+    helpers.run_quality_check(df, 'dim_city')
 
     # 3. Create dim_state table 
-    create_tables.create_dim_state_table(contents, output_data)
+    logging.info("Creating state dimension table..")
+    df = create_tables.create_dim_state_table(spark, contents, output_data)
+    helpers.run_quality_check(df, 'dim_state')
 
     logging.info("Finished processing label descriptions.")
     
@@ -134,10 +153,10 @@ def process_i94_label_descriptions(spark, input_data, output_data)
 def main():
     spark = create_spark_session()
 
-    process_i94_sas_label_descriptions(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)
+    process_i94_label_descriptions(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)
     process_immigration_data(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)    
     process_city_demographics_data(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)
-    process_temparature_data(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)
+    process_temperature_data(spark, READ_S3_BUCKET, WRITE_S3_BUCKET)
     
 
 if __name__ == "__main__":

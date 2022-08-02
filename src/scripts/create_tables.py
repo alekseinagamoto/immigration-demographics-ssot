@@ -1,4 +1,8 @@
+import datetime as dt
 import pandas as pd
+
+
+from pyspark.sql.functions import udf, monotonically_increasing_id, to_date, col, year, month
 
 def create_immigration_fact_table(df, output_data):
     """Creates an immigration fact table from  I94 Immigration data.
@@ -6,6 +10,9 @@ def create_immigration_fact_table(df, output_data):
     Args:
         df {object}: spark dataframe with preprocessed immigration data
         output_data {str}: write path
+
+    Return:
+        df {object}: spark dataframe with preprocessed immigration data
     """    
     # UDF to convert SAS date format to datetime object
     get_datetime = udf(lambda x: (dt.datetime(1960, 1, 1).date() + dt.timedelta(x)).isoformat() if x else None)
@@ -28,7 +35,9 @@ def create_immigration_fact_table(df, output_data):
     df = df.withColumn('immigration_id', monotonically_increasing_id())
     
     # write fact table to parquet file partioned by state
-    df.write.mode('overwrite').partitionBy('state_code').parquet(path=output_data + "fact_immigration")
+    df.write.mode('overwrite').partitionBy('state_code').parquet(path=output_data + "fact_immigration.parquet")
+
+    return df
 
 
 def create_immi_demographics_dim_table(df, output_data):
@@ -37,6 +46,9 @@ def create_immi_demographics_dim_table(df, output_data):
     Args:
         df {object}: spark dataframe of immigration data
         output_data {str}: write path
+
+    Return:
+        df {object}: spark dataframe with preprocessed immigrant demographics data
     """    
     df = df.withColumnRenamed('cicid','cic_id') \
            .withColumnRenamed('i94cit', 'country_of_birth') \
@@ -47,7 +59,9 @@ def create_immi_demographics_dim_table(df, output_data):
     df = df.withColumn('immi_demographics_id', monotonically_increasing_id())
     
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_immigrant_demographics")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_immigrant_demographics.parquet")
+
+    return df
 
 
 def create_city_demographics_dimension_table(df, output_data):
@@ -56,6 +70,9 @@ def create_city_demographics_dimension_table(df, output_data):
     Args:
         df {object}: spark dataframe of us city demographics data
         output_data {str}: write path
+
+    Return:
+        df {object}: spark dataframe with preprocessed city demographics data
     """
     df = df.withColumnRenamed('City', 'city_code') \
            .withColumnRenamed('State Code', 'state_code') \
@@ -72,7 +89,9 @@ def create_city_demographics_dimension_table(df, output_data):
     df = df.withColumn('id', monotonically_increasing_id())
     
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_city_demographics")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_city_demographics.parquet")
+
+    return df
 
 
 def create_temperature_dimension_table(df, output_data):
@@ -81,6 +100,9 @@ def create_temperature_dimension_table(df, output_data):
     Args:
         df {object}: spark dataframe of global average temperature by city data
         output_data {str}: write path
+
+    Return:
+        df {object}: spark dataframe with preprocessed temperature data
     """
     df = df.withColumn('dt', to_date(col('dt'))) \
            .withColumnRenamed('City', 'city_name') \
@@ -93,68 +115,84 @@ def create_temperature_dimension_table(df, output_data):
     df = df.withColumn('month', month(df['dt']))
 
     # write dimension table to parquet file
-    df.write.mode('overwrite').parquet(path=output_data + "dim_temperature")
+    df.write.mode('overwrite').parquet(path=output_data + "dim_temperature.parquet")
     
     return df
 
 
-def create_dim_country_table(data, output_data):
-"""Creates a country dim table from I94 SAS labels descriptions. 
+def create_dim_country_table(spark, data, output_data):
+    """Creates a country dim table from I94 SAS labels descriptions. 
 
-Args:
-    data {object}: I94 SAS labels descriptions
-    output_data {str}: write path
-"""  
-i94cit_i94res = {}
-for countries in data[9:298]:
-    pair = countries.split('=')
-    country_code, country_name = pair[0].strip(), pair[1].strip().strip("'")
-    i94cit_i94res[country_code] = country_name
+    Args:
+        spark {object}: SparkSession object
+        data {object}: I94 SAS labels descriptions
+        output_data {str}: write path
 
-spark.createDataFrame(i94cit_i94res.items(), ['country_code', 'country_name'])\
-    .write.mode("overwrite")\
-    .parquet(path=output_data + 'dim_country')
+    Return:
+        df {object}: spark dataframe with country data
+    """  
+    i94cit_i94res = {}
+    for countries in data[9:298]:
+        pair = countries.split('=')
+        country_code, country_name = pair[0].strip(), pair[1].strip().strip("'")
+        i94cit_i94res[country_code] = country_name
 
+    df = spark.createDataFrame(i94cit_i94res.items(), ['country_code', 'country_name'])
+    df.write.mode("overwrite").parquet(path=output_data + 'dim_country.parquet')
 
-def create_dim_city_table(data, output_data):
-"""Creates a city dim table from I94 SAS labels descriptions. 
-
-Args:
-    data {object}: I94 SAS labels descriptions
-    output_data {str}: write path
-"""  
-i94port = {}
-for cities in data[302:962]:
-    pair = cities.split('=')
-    city_code, city_name = pair[0].strip("\t").strip().strip("'"), pair[1].strip('\t').strip().strip("''")
-    i94port[city_code] = city_name
-
-df_i94port = pd.DataFrame(list(i94port.items()), columns=['city_code', 'city_name'])
-df_i94port[['city_name', 'state_code']] = df_i94port['city_name'].str.split(',', 1, expand=True)
-df_i94port['city_name'] = df_i94port['city_name'].str.title()
-df_i94port.drop(columns='state_code', inplace=True)
-
-spark.createDataFrame(df_i94port)\
-    .write.mode("overwrite")\
-    .parquet(path=output_data + 'dim_city')
+    return df
+        
 
 
-def create_dim_state_table(data, output_data):
-"""Creates a state dim table from I94 SAS labels descriptions. 
+def create_dim_city_table(spark, data, output_data):
+    """Creates a city dim table from I94 SAS labels descriptions. 
 
-Args:
-data {object}: I94 SAS labels descriptions
-output_data {str}: write path
-""" 
-i94addr = {}
-for states in data[981:1036]:
-    pair = states.split('=')
-    state_code, state_name = pair[0].strip('\t').strip("'"), pair[1].strip().strip("'")
-    i94addr[state_code] = state_name.title()
+    Args:
+        spark {object}: SparkSession object
+        data {object}: I94 SAS labels descriptions
+        output_data {str}: write path
 
-df_i94addr = pd.DataFrame(list(i94addr.items()), columns=['state_code', 'state_name'])
-spark.createDataFrame(df_i94addr)\
-    .write.mode("overwrite")\
-    .parquet(path=output_data + 'dim_state')
+    Return:
+        df {object}: spark dataframe with city data
+    """  
+    i94port = {}
+    for cities in data[302:962]:
+        pair = cities.split('=')
+        city_code, city_name = pair[0].strip("\t").strip().strip("'"), pair[1].strip('\t').strip().strip("''")
+        i94port[city_code] = city_name
+
+    df_i94port = pd.DataFrame(list(i94port.items()), columns=['city_code', 'city_name'])
+    df_i94port[['city_name', 'state_code']] = df_i94port['city_name'].str.split(',', 1, expand=True)
+    df_i94port['city_name'] = df_i94port['city_name'].str.title()
+    df_i94port.drop(columns='state_code', inplace=True)
+
+    df = spark.createDataFrame(df_i94port)
+    df.write.mode("overwrite").parquet(path=output_data + 'dim_city.parquet')
+
+    return df
+
+
+def create_dim_state_table(spark, data, output_data):
+    """Creates a state dim table from I94 SAS labels descriptions. 
+
+    Args:
+        spark {object}: SparkSession object
+        data {object}: I94 SAS labels descriptions
+        output_data {str}: write path
+
+    Return:
+        df {object}: spark dataframe with state data
+    """ 
+    i94addr = {}
+    for states in data[981:1036]:
+        pair = states.split('=')
+        state_code, state_name = pair[0].strip('\t').strip("'"), pair[1].strip().strip("'")
+        i94addr[state_code] = state_name.title()
+
+    df_i94addr = pd.DataFrame(list(i94addr.items()), columns=['state_code', 'state_name'])
+    df = spark.createDataFrame(df_i94addr)
+    df.write.mode("overwrite").parquet(path=output_data + 'dim_state.parquet')
+
+    return df
 
 
