@@ -28,6 +28,7 @@ In order to create a single-source-of-truth data warehouse, the following steps 
     * Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
 * Perform data quality checks
+* Write created fact and dimension tables to S3
     
 ##### Datasets:
 
@@ -39,8 +40,8 @@ In order to create a single-source-of-truth data warehouse, the following steps 
 
 ##### Tech Stack:
 We've made use of the followng technologies in this project: 
-- [AWS S3](https://aws.amazon.com/s3/): data storage
-- Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)): for reading data from the source (e.g. customer systems / internal systems etc), preprocessing the data and creates fact and dimension tables, and writing the data into fact and dimension tabls on S3.
+* [AWS S3](https://aws.amazon.com/s3/) for data storage.
+* Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
 
 ## Data Warehouse Design
 
@@ -50,42 +51,38 @@ The data model for our single-source-of-truth datawarehouse looks as follows:
 
 <img src="erd_data_warehouse.png" alt="Conceptual model" width="600" height="400" />
 
-## ETL Pipeline Design
+## ETL Pipeline 
+
+### Pipeline Design
 
 The data pipeline is as follows:
 
-1. Load datasets stored in S3 buckets into Spark dataframes:
-    - [Source_S3_Bucket]/immigration_data/18-83510-I94-Data-2016/*.sas7bdat
-    - [Source_S3_Bucket]/I94_SAS_labels_data/I94_SAS_Labels_Descriptions.SAS
-    - [Source_S3_Bucket]/temperature_data/GlobalLandTemperaturesByCity.csv
-    - [Source_S3_Bucket]/us_demographics_data/us-cities-demographics.csv
+1.  Load datasets stored in S3 buckets into Spark dataframes:
+       - [READ_S3_BUCKET]/immigration_data/18-83510-I94-Data-2016/*.sas7bdat
+       - [READ_S3_BUCKET]/I94_SAS_labels_data/I94_SAS_Labels_Descriptions.SAS
+       - [READ_S3_BUCKET]/temperature_data/GlobalLandTemperaturesByCity.csv
+       - [READ_S3_BUCKET]/us_demographics_data/us-cities-demographics.csv
     
 
-2. Create helper dimension tables from I94_SAS_Labels_Descriptinons.SAS file
-    - Create country dimension table from `i94cit_i94res` data in the I94_SAS_Labels_Descriptions.SAS file
-    - Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
-    - Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
+2.  Create helper dimension tables from I94_SAS_Labels_Descriptinons.SAS file
+       - Create country dimension table from `i94cit_i94res` data in the I94_SAS_Labels_Descriptions.SAS file
+       - Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
+       - Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
 
-3. Preprocess I94 Immigration data
-4. Create I94 Immigration fact table - `fact_immigration` - from preprocessed I94 Immigration data  
-5. Create I94 Immigration demographics dimension table - `dim_immigrant_demographics` - from preprocessed I94 Immigration data 
-6. Create U.S. City Demographic dimension table - `dim_city_demographics` - from U.S. City Demographic data
-7. Preprocess World Temperature data
-8. Create World Temperature dimension table - `dim_city_temperature` - from preprocessed World Temperature data 
-9. Perform data quality checks
+3.  Preprocess I94 Immigration data
+4.  Create I94 Immigration fact table - `fact_immigration` - from preprocessed I94 Immigration data  
+5.  Create I94 Immigration demographics dimension table - `dim_immigrant_demographics` - from preprocessed I94 Immigration data 
+6.  Create U.S. City Demographic dimension table - `dim_city_demographics` - from U.S. City Demographic data
+7.  Preprocess World Temperature data
+8.  Create World Temperature dimension table - `dim_city_temperature` - from preprocessed World Temperature data 
+9.  Perform data quality checks
+10. Write created fact and dimension tables to S3 
 
-## Getting Started
-
-### Tech Stack
-
-- Apache Spark
-- AWS S3
-
-### Execute ETL Pipeline
+### Pipeline Execution
 
 You can run the ETL pipeline by running the jupyter notebook ```Capstone Project ETL.ipynb``` notebook after you've uploaded the datasets to your S3 buckets of choice. 
 
-Alternatively, after uploading the datasets to S3 you can run ```etl.py``` to run the ETL pipeline from start to finish.
+Alternatively, you can run ```etl.py``` to run the ETL pipeline from start to finish after you've uploaded the datasets to your S3 buckets of choice. 
 
 ## Directory Structure
 
@@ -112,8 +109,8 @@ Alternatively, after uploading the datasets to S3 you can run ```etl.py``` to ru
 * Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
 
 ### Data update frequency
-* The immigration fact and immigrant demographics dimension table, and temperature table should be updated on a monthly schedule as the raw data is aggregated on a monthly time period.
-* The US city demographics table can be updated depending on the refresh time period of the raw data, which, given how involved it is to update census data, probably annually.
+* The immigration fact, mmigrant demographics dimension table and temperature table should be updated on a monthly schedule as the raw data is aggregated on a monthly time period.
+* The US city demographics table can be updated depending on the refresh time period of the raw data, which, given how involved it is to update census data, can be done annually.
 
 ### Future work
 The data was increased by 100x
