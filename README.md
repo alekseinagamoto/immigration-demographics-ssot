@@ -26,6 +26,7 @@ In order to create a single-source-of-truth data warehouse, the following steps 
     * Create country dimension table from `i94cit_i94res` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create city dimension table from `dim_i94port` data in the I94_SAS_Labels_Descriptions.SAS file
     * Create state dimension table from `dim_i94addr` data in I94_SAS_Labels_Descriptions.SAS file
+* Perform data quality checks
     
 ##### Datasets:
 
@@ -81,9 +82,9 @@ The data pipeline is as follows:
 
 ### Execute ETL Pipeline
 
-You can run the ETL pipeline by running the jupyter notebook ```Capstone Project ETL.ipynb``` notebook after you've uploaded the datasets in the ``` data_raw``` folder to your S3 buckets of choice. 
+You can run the ETL pipeline by running the jupyter notebook ```Capstone Project ETL.ipynb``` notebook after you've uploaded the datasets to your S3 buckets of choice. 
 
-Alternatively, after uploading the datasets from the ```data/raw``` folder to S3 you can run ```etl.py``` to run the ETL pipeline from start to finish.
+Alternatively, after uploading the datasets to S3 you can run ```etl.py``` to run the ETL pipeline from start to finish.
 
 ## Directory Structure
 
@@ -97,9 +98,6 @@ Alternatively, after uploading the datasets from the ```data/raw``` folder to S3
 |       ├── etl.py                          <- Script to execute ETL pipeline.
 |       ├── create_tables.py                <- Script to create database tables.
 |       └── helpers.py                      <- Script with helper functions for data preprocessing and data quality checks
-|
-├── data
-|   └── raw                                 <- Datasets
 |
 |
 ├── README.md                               <- README for developers using this project.
