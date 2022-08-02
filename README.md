@@ -8,7 +8,7 @@
 - [References](#references)
 
 ## About
-The goal of this project is to create a single-source-of-truth date warehouse that can serve as the foundation for creating logical data marts for analytics purposes on I94 immigration data, city temperatures data and U.S. demographics data.    
+The goal of this project is to create a single-source-of-truth date warehouse that can serve as the foundation for creating logical data marts for analytics purposes on I94 immigration data, city temperatures data and U.S. demographics data. The raw data resides in S3 and will be processed using Apache Spark into fact and dimension table before written back to S3.     
 
 
 #### Scope 
