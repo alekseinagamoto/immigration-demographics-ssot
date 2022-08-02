@@ -1,6 +1,7 @@
 # Immmigration Demographics Single-Source-Of-Truth table
 
 - [About](#about)
+- [Data Warehouse Design](#data-warehouse-design)
 - [ETL Pipeline](#etl-pipeline)
 - [Directory Strucure](#directory-structure)
 - [Future Work considerations](#future-work-considerations)
@@ -29,7 +30,7 @@ In order to create a single-source-of-truth data warehouse, the following steps 
 * Perform data quality checks
 * Write created fact and dimension tables to S3
     
-##### Datasets:
+#### Datasets:
 
 | Data Set | Format  | Description |
 |  :-     |  :-    |  :-        |
@@ -37,14 +38,14 @@ In order to create a single-source-of-truth data warehouse, the following steps 
 |[World Temperature Data](https://www.kaggle.com/datasets/berkeleyearth/climate-change-earth-surface-temperature-data)| CSV | Dataset contains monthly average temperatures by city.|
 |[U.S. City Demographic Data](https://public.opendatasoft.com/explore/dataset/us-cities-demographics/export/)| CSV | Dataset contains information about the demographics of all US cities and census-designated places with a population greater or equal to 65,000.|
 
-##### Tech Stack:
+#### Tech Stack:
 We've made use of the followng technologies in this project: 
 * [AWS S3](https://aws.amazon.com/s3/) for data storage.
 * Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
 
 ## Data Warehouse Design
 
-### Database Schema
+#### Database Schema
 
 The data model for our single-source-of-truth datawarehouse looks as follows:
 
@@ -52,7 +53,7 @@ The data model for our single-source-of-truth datawarehouse looks as follows:
 
 ## ETL Pipeline 
 
-### Pipeline Design
+#### Pipeline Design
 
 The data pipeline is as follows:
 
@@ -77,7 +78,7 @@ The data pipeline is as follows:
 9.  Perform data quality checks
 10. Write created fact and dimension tables to S3 
 
-### Pipeline Execution
+#### Pipeline Execution
 
 You can run the ETL pipeline by running the jupyter notebook ```Capstone Project ETL.ipynb``` notebook after you've uploaded the datasets to your S3 buckets of choice. 
 
@@ -103,15 +104,15 @@ Alternatively, you can run ```etl.py``` to run the ETL pipeline from start to fi
 ```
 
 ## Future Work Considerations
-### Tools and technologies
+#### Tools and technologies
 * [AWS S3](https://aws.amazon.com/s3/) for data storage.
 * Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
 
-### Data update frequency
+#### Data update frequency
 * The immigration fact, mmigrant demographics dimension table and temperature table should be updated on a monthly schedule as the raw data is aggregated on a monthly time period.
 * The US city demographics table can be updated depending on the refresh time period of the raw data, which, given how involved it is to update census data, can be done annually.
 
-### Future work
+#### Future work
 The data was increased by 100x
 * It seems unlikely that a 100x increase in the data size would be efficiently processes by Apache Spark in standalone server mode and a cloud big data plaform for running large-scale distributed processing jobs such as [Amazon EMR](https://aws.amazon.com/emr/) should be considered to scale.
 
