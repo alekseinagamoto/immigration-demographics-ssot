@@ -1,14 +1,13 @@
 # Immmigration Demographics Single-Source-Of-Truth table
 
 - [About](#about)
-- [ETL Pipeline Design](#etl-pipeline-design)
-- [Getting Started](#getting-started)
+- [ETL Pipeline](#etl-pipeline)
 - [Directory Strucure](#directory-structure)
 - [Future Work considerations](#future-work-considerations)
 - [References](#references)
 
 ## About
-The goal of this project is to create a single-source-of-truth date warehouse that can serve as the foundation for creating logical data marts for analytics purposes on I94 immigration data, city temperatures data and U.S. demographics data. The raw data resides in S3 and will be processed using Apache Spark into fact and dimension table before written back to S3.     
+The goal of this project is to create a single-source-of-truth date warehouse containing I94 immigration data, city temperatures data and U.S. demographics data. This single-source-of-truth can downstream be used as the foundation for creating logical data marts for analytics purposes. The raw data resides in S3 and is processed using Apache Spark into fact and dimension tables before written back to S3.     
 
 
 #### Scope 
@@ -95,7 +94,7 @@ Alternatively, you can run ```etl.py``` to run the ETL pipeline from start to fi
 |   └── scripts  
 |       ├── etl.py                          <- Script to execute ETL pipeline.
 |       ├── create_tables.py                <- Script to create database tables.
-|       └── helpers.py                      <- Script with helper functions for data preprocessing and data quality checks
+|       └── helpers.py                      <- Script with helper functions for data preprocessing and data quality checks.
 |
 |
 ├── README.md                               <- README for developers using this project.
@@ -104,7 +103,7 @@ Alternatively, you can run ```etl.py``` to run the ETL pipeline from start to fi
 ```
 
 ## Future Work Considerations
-### The rationale for the chosen tools and technologies
+### Tools and technologies
 * [AWS S3](https://aws.amazon.com/s3/) for data storage.
 * Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
 
