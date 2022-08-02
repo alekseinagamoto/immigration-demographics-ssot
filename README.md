@@ -4,6 +4,7 @@
 - [ETL Pipeline Design](#etl-pipeline-design)
 - [Getting Started](#getting-started)
 - [Directory Strucure](#directory-structure)
+- [Future Work considerations](#future-work-considerations)
 - [References](#references)
 
 ## About
@@ -104,6 +105,25 @@ Alternatively, after uploading the datasets to S3 you can run ```etl.py``` to ru
 ├── poetry.lock                             <- The poetry.lock file for reproducing the analysis environment.
 └── pyproject.toml                          <- The pyproject.toml file for reproducing the analysis environment.
 ```
+
+## Future Work Considerations
+### The rationale for the chosen tools and technologies
+* [AWS S3](https://aws.amazon.com/s3/) for data storage.
+* Apache Spark ([PySpark](https://spark.apache.org/docs/latest/api/python/#:~:text=PySpark%20is%20an%20interface%20for,data%20in%20a%20distributed%20environment.)) processing the data and creating fact and dimension tables.
+
+### Data update frequency
+* The immigration fact and immigrant demographics dimension table, and temperature table should be updated on a monthly schedule as the raw data is aggregated on a monthly time period.
+* The US city demographics table can be updated depending on the refresh time period of the raw data, which, given how involved it is to update census data, probably annually.
+
+### Future work
+The data was increased by 100x
+* It seems unlikely that a 100x increase in the data size would be efficiently processes by Apache Spark in standalone server mode and a cloud big data plaform for running large-scale distributed processing jobs such as [Amazon EMR](https://aws.amazon.com/emr/) should be considered to scale.
+
+The data populates a dashboard that must be updated on a daily basis by 7am every day.
+* [Apache Airflow](https://airflow.apache.org/) can be used for building out an ETL data pipeline that automates the tasks of processing fresh data and updating the dashboard on a daily basis by 7am.   
+ 
+The database needed to be accessed by 100+ people.
+* In this scenario we would move our single-source-of-truth database to a cloud dataware house such as [Amazon Redshift](https://aws.amazon.com/redshift/).
 
 ## References
 
