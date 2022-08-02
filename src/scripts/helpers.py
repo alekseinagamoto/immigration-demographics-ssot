@@ -73,7 +73,7 @@ def preprocess_demographics_data(df):
     
     return df
 
-def run_quality_check(df, table_name):
+def run_data_completeness_check(df, table_name):
     """Check for non-empty fact and dimension tables.
     Args:
         df {object}: spark dataframe
@@ -82,6 +82,19 @@ def run_quality_check(df, table_name):
     total_count = df.count()
 
     if total_count == 0:
-        logging.warning(f"Data quality check FAILED for {table_name}: no records found!")
+        logging.warning(f"Data completeness check FAILED for {table_name}: no records found!")
     else:
-        logging.info(f"Data quality check PASSED for {table_name}: {total_count} records found!")
+        logging.info(f"Data completeness check PASSED for {table_name}: {total_count} records found!")
+
+
+def run_table_schema_check(df, table_name, expected_schema):
+    """Check for schema correctness of fact and dimension tables.
+    Args:
+        df {object}: spark dataframe
+        table_name {str}: table name
+        schema {object}: schema
+    """
+    if df.schema != expected_schema:
+        logging.warning(f"Table schema check FAILED for {table_name}: unexpected schema!")
+    else:
+        logging.info(f"Table schema check PASSED for {table_name}: expected schema!")
